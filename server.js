@@ -1,9 +1,10 @@
+// ENDPOINT CON PUPPETEER PARA LEER CÓDIGO QR
 const express = require('express');
 const puppeteer = require('puppeteer');
 const cors = require('cors');
 
 const app = express();
-app.use(cors());    // Enable CORS for all routes (Vercel & GitHub)
+app.use(cors());
 app.use(express.json());
 
 app.get('/api/leer-qr', async (req, res) => {
@@ -35,6 +36,72 @@ app.get('/api/leer-qr', async (req, res) => {
         res.json({ contenido: datosEstudiante });
     } catch(error) {
         res.status(500).json({ error: 'Error al procesar el QR: ' + error.message });
+    }
+});
+
+// ENDPOINT CON EXCELJS PARA RECIBIR Y GUARDAR DATOS EN EXCEL
+const ExcelJS = require('exceljs');
+const fs = require('fs');
+const path = require('path');
+
+app.post('/api/guardar-registro', async (req, res) => {
+    const datos = req.body;
+
+    // registros.xlsx es el nombre del archivo donde se guardarán los registros
+    const rutaArchivo = path.join(__dirname, 'registros.xlsx');
+
+    const workbook = new ExcelJS.Workbook();
+
+    try {
+        // Si existe, lo carga. Si no, lo crea
+        if(fs.existsSync(rutaArchivo)) {
+            await workbook.xlsx.readFile(rutaArchivo);
+        } else {
+            const hoja = workbook.addWorksheet('Registros');
+            hoja.columns = [
+                { header: 'Fecha', key: 'fecha', width: 13.20 },
+                { header: 'Nombre del Consultor', key: 'nombre', width: 47.20 },
+                { header: 'No. Control', key: 'noControl', width: 15.13 },
+                { header: 'Carrera', key: 'carrera', width: 36 },
+                { header: 'Revisión de libro en sala', key: 'sala', width: 9.20 },
+                { header: 'Revisión de libro a domicilio', key: 'domicilio', width: 9.20 },
+                { header: 'Revisión Tesina', key: 'tesina', width: 9.20 },
+                { header: 'Consulta de revista / periódico', key: 'revista', width: 9.20 },
+                { header: 'Sala de Computación', key: 'computacion', width: 9.20 },
+            ];
+
+            // Aplicar estilo
+            hoja.getRow(1).eachCell((cell, colNumber) => {
+                cell.font = {
+                    bold: true, 
+                    italic: true, 
+                    underline: true,
+                    size: colNumber >= 5 ? 8 : 11
+                };
+                cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true};
+            });
+        }
+        const hoja = workbook.getWorksheet('Registros');
+
+        const fila = {
+            fecha: datos.fecha,
+            nombre: datos.nombre,
+            noControl: datos.noControl,
+            carrera: datos.carrera,
+            sala: datos.tipo === 'Revisión de libro en sala' ? 'X' : '',
+            domicilio: datos.tipo === 'Revisión de libro a domicilio' ? 'X' : '',
+            tesina: datos.tipo === 'Revisión Tesina' ? 'X' : '',
+            revista: datos.tipo === 'Consulta de revista / periódico' ? 'X' : '',
+            computacion: datos.tipo === 'Sala de Computación' ? 'X' : ''
+        };
+
+        hoja.addRow(fila);
+        await workbook.xlsx.writeFile(rutaArchivo);
+
+        res.json({ mensaje: 'Registro guardado exitosamente' });
+    } catch(error) {
+        console.error('Error al guardar el registro:', error);
+        res.status(500).json({ error: 'No se pudo guardar el registro ' });
     }
 });
 
