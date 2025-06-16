@@ -46,7 +46,7 @@ const path = require('path');
 
 app.post('/api/guardar-registro', async (req, res) => {
     const datos = req.body;
-    console.log('Datos recibidos:', datos);
+        
     // registros.xlsx es el nombre del archivo donde se guardarán los registros
     const rutaArchivo = path.join(__dirname, 'registros.xlsx');
 
@@ -58,13 +58,25 @@ app.post('/api/guardar-registro', async (req, res) => {
         // Si el archivo existe, lo carga. Si no, lo crea
         if(fs.existsSync(rutaArchivo)) {
             await workbook.xlsx.readFile(rutaArchivo);
-            hoja = workbook.getWorksheet('Registros') || workbook.addWorksheet('Registros');
+            hoja = workbook.getWorksheet('Registros');
+            hoja.columns = [
+                { header: 'Fecha', key: 'fecha', width: 13.20 },
+                { header: 'Hora', key: 'hora', width: 13.20 },
+                { header: 'Nombre del Consultor', key: 'nombre', width: 47.20 },
+                { header: 'No. Control', key: 'noControl', width: 15.13 },
+                { header: 'Carrera', key: 'carrera', width: 36 },
+                { header: 'Revisión de libro en sala', key: 'sala', width: 9.20 },
+                { header: 'Revisión de libro a domicilio', key: 'domicilio', width: 9.20 },
+                { header: 'Revisión Tesina', key: 'tesina', width: 9.20 },
+                { header: 'Consulta de revista / periódico', key: 'revista', width: 9.20 },
+                { header: 'Sala de Computación', key: 'computacion', width: 9.20 },
+            ];
             numeroFila = hoja.rowCount + 1;
-            console.log('Hoja encontrada, número de fila:', numeroFila);
         } else {
             hoja = workbook.addWorksheet('Registros');
             hoja.columns = [
                 { header: 'Fecha', key: 'fecha', width: 13.20 },
+                { header: 'Hora', key: 'hora', width: 13.20 },
                 { header: 'Nombre del Consultor', key: 'nombre', width: 47.20 },
                 { header: 'No. Control', key: 'noControl', width: 15.13 },
                 { header: 'Carrera', key: 'carrera', width: 36 },
@@ -81,7 +93,7 @@ app.post('/api/guardar-registro', async (req, res) => {
                     bold: true, 
                     italic: true, 
                     underline: true,
-                    size: colNumber >= 5 ? 8 : 11
+                    size: colNumber >= 6 ? 8 : 11
                 };
                 cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true};
             });
@@ -92,6 +104,7 @@ app.post('/api/guardar-registro', async (req, res) => {
 
         const fila = {
             fecha: datos.fecha,
+            hora: datos.hora,
             nombre: datos.nombre,
             noControl: datos.noControl,
             carrera: datos.carrera,
