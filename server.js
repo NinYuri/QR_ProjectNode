@@ -46,18 +46,23 @@ const path = require('path');
 
 app.post('/api/guardar-registro', async (req, res) => {
     const datos = req.body;
-
+    console.log('Datos recibidos:', datos);
     // registros.xlsx es el nombre del archivo donde se guardarán los registros
     const rutaArchivo = path.join(__dirname, 'registros.xlsx');
 
-    const workbook = new ExcelJS.Workbook();
-
     try {
-        // Si existe, lo carga. Si no, lo crea
+        const workbook = new ExcelJS.Workbook();
+        let hoja;
+        let numeroFila;
+
+        // Si el archivo existe, lo carga. Si no, lo crea
         if(fs.existsSync(rutaArchivo)) {
             await workbook.xlsx.readFile(rutaArchivo);
+            hoja = workbook.getWorksheet('Registros') || workbook.addWorksheet('Registros');
+            numeroFila = hoja.rowCount + 1;
+            console.log('Hoja encontrada, número de fila:', numeroFila);
         } else {
-            const hoja = workbook.addWorksheet('Registros');
+            hoja = workbook.addWorksheet('Registros');
             hoja.columns = [
                 { header: 'Fecha', key: 'fecha', width: 13.20 },
                 { header: 'Nombre del Consultor', key: 'nombre', width: 47.20 },
@@ -80,8 +85,10 @@ app.post('/api/guardar-registro', async (req, res) => {
                 };
                 cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true};
             });
+
+            await workbook.xlsx.writeFile(rutaArchivo);
+            numeroFila = 2;
         }
-        const hoja = workbook.getWorksheet('Registros');
 
         const fila = {
             fecha: datos.fecha,
@@ -94,8 +101,9 @@ app.post('/api/guardar-registro', async (req, res) => {
             revista: datos.tipo === 'Consulta de revista / periódico' ? 'X' : '',
             computacion: datos.tipo === 'Sala de Computación' ? 'X' : ''
         };
-
         hoja.addRow(fila);
+        numeroFila = hoja.rowCount;
+
         await workbook.xlsx.writeFile(rutaArchivo);
 
         res.json({ mensaje: 'Registro guardado exitosamente' });
