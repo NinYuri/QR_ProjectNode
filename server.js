@@ -11,14 +11,25 @@ app.get('/api/leer-qr', async (req, res) => {
     const qrUrl = req.query.url;
     if(!qrUrl) return res.status(400).json({ error: 'URL del QR no proporcionada' });
 
+    let browser;
     try {
-        const browser = await puppeteer.launch({ 
+        browser = await puppeteer.launch({ 
             headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            args: [
+                '--no-sandbox', 
+                '--disable-setuid-sandbox',
+                '--disable-web-security',       // Para evitar políticas CORS
+                '--ignore-certificate-errors'   // Ignora errores de SSL
+            ],
+            timeout: 3000000
         });
         const page = await browser.newPage();
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
 
-        await page.goto(qrUrl, { waitUntil: 'domcontentloaded' });
+        await page.goto(qrUrl, { 
+            waitUntil: 'networkidle2',
+            timeout: 30000
+         });
 
         // Etraer el contenido de la página
         const datosEstudiante = await page.evaluate(() => {
@@ -64,12 +75,12 @@ app.post('/api/guardar-registro', async (req, res) => {
                 { header: 'Hora', key: 'hora', width: 13.20 },
                 { header: 'Nombre del Consultor', key: 'nombre', width: 47.20 },
                 { header: 'No. Control', key: 'noControl', width: 15.13 },
-                { header: 'Carrera', key: 'carrera', width: 36 },
-                { header: 'Revisión de libro en sala', key: 'sala', width: 9.20 },
-                { header: 'Revisión de libro a domicilio', key: 'domicilio', width: 9.20 },
-                { header: 'Revisión Tesina', key: 'tesina', width: 9.20 },
-                { header: 'Consulta de revista / periódico', key: 'revista', width: 9.20 },
-                { header: 'Sala de Computación', key: 'computacion', width: 9.20 },
+                { header: 'Carrera', key: 'carrera', width: 45 },
+                { header: 'Revisión de libro en sala', key: 'sala', width: 9.9 },
+                { header: 'Revisión de libro a domicilio', key: 'domicilio', width: 9.9 },
+                { header: 'Revisión Tesina', key: 'tesina', width: 9.9 },
+                { header: 'Consulta de revista / periódico', key: 'revista', width: 9.9 },
+                { header: 'Sala de Computación', key: 'computacion', width: 9.9 },
             ];
             numeroFila = hoja.rowCount + 1;
         } else {
@@ -79,12 +90,12 @@ app.post('/api/guardar-registro', async (req, res) => {
                 { header: 'Hora', key: 'hora', width: 13.20 },
                 { header: 'Nombre del Consultor', key: 'nombre', width: 47.20 },
                 { header: 'No. Control', key: 'noControl', width: 15.13 },
-                { header: 'Carrera', key: 'carrera', width: 36 },
-                { header: 'Revisión de libro en sala', key: 'sala', width: 9.20 },
-                { header: 'Revisión de libro a domicilio', key: 'domicilio', width: 9.20 },
-                { header: 'Revisión Tesina', key: 'tesina', width: 9.20 },
-                { header: 'Consulta de revista / periódico', key: 'revista', width: 9.20 },
-                { header: 'Sala de Computación', key: 'computacion', width: 9.20 },
+                { header: 'Carrera', key: 'carrera', width: 45 },
+                { header: 'Revisión de libro en sala', key: 'sala', width: 9.9 },
+                { header: 'Revisión de libro a domicilio', key: 'domicilio', width: 9.9 },
+                { header: 'Revisión Tesina', key: 'tesina', width: 9.9 },
+                { header: 'Consulta de revista / periódico', key: 'revista', width: 9.9 },
+                { header: 'Sala de Computación', key: 'computacion', width: 9.9 },
             ];
 
             // Aplicar estilo
